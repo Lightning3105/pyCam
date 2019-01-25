@@ -17,10 +17,12 @@ def _motion(frame, isMoving, frameQueue):
 	isMoving.value = motion(frameQueue)
 
 
-def store(isMoving, frame, output):
-	if isMoving.value > 800:
+def store(isMoving, frame, output, force=False):
+	if isMoving.value > 800 or force:
 		#cv2.imwrite('storage/{}.jpg'.format(str(datetime.now())), frame)
 		output.write(frame)
+		return 1
+	return 0
 
 def archive():
 	DRIVE = '/dev/sdb'
@@ -31,11 +33,11 @@ def archive():
 
 
 
-def save_video(video_out, frame, start, force=False, recreate=True):
+def save_video(video_out, frame, start, captures, force=False, recreate=True):
 	if (datetime.now() - start).seconds >= 60 * 60 * 6 or force:
 		video_out.release()
 		try:
-			os.rename('storage/video.mp4', 'storage/{}_{}.mp4'.format(start.strftime("%Y-%m-%d--%H-%M-%S"), datetime.now().strftime("%Y-%m-%d--%H-%M-%S")))
+			os.rename('storage/video.mp4', 'storage/{}_{}_({}).mp4'.format(start.strftime("%Y-%m-%d--%H-%M-%S"), datetime.now().strftime("%Y-%m-%d--%H-%M-%S"), captures))
 		except FileNotFoundError:
 			print('Video file non-existent')
 		archive()
@@ -59,6 +61,8 @@ def camera_loop():
 
 	height, width, channels = video_capture.read()[1].shape
 	fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Be sure to use lower case
+	if not os.path.exists('storage'):
+		os.mkdir('storage')
 	if os.path.exists('storage/video.mp4'):
 		os.rename('storage/video.mp4', 'storage/{}_{}.mp4'.format("UNKNOWN",
 		                                                          datetime.now().strftime("%Y-%m-%d--%H-%M-%S")))
@@ -76,6 +80,7 @@ def camera_loop():
 	signal.signal(signal.SIGTERM, stop)
 
 	start = datetime.now()
+	captures = 0
 
 	while True:
 		ret, frame = video_capture.read()
@@ -92,9 +97,9 @@ def camera_loop():
 			print("Am I here?", isPresent.value)
 			print("Am I moving?", isMoving.value)
 
-			store(isMoving, frame, video_out)
+			captures += store(isMoving, frame, video_out)
 
-			video_out, start = save_video(video_out, frame, start)
+			video_out, start = save_video(video_out, frame, start, captures)
 
 		process += 1
 
