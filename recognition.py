@@ -17,7 +17,7 @@ import os
 known_face_encodings = []
 # Load a sample picture and learn how to recognize it.
 for file in os.listdir('dataset'):
-	image = face_recognition.load_image_file(f"dataset/{file}")
+	image = face_recognition.load_image_file("dataset/{}".format(file))
 	encoding = face_recognition.face_encodings(image)[0]
 	known_face_encodings.append(encoding)
 
