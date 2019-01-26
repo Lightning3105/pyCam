@@ -118,5 +118,4 @@ def camera_loop():
 	cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-	#camera_loop()
-	archive()
+	camera_loop()
