@@ -41,13 +41,14 @@ def save_video(video_out, frame, start, captures, force=False, recreate=True):
 		except FileNotFoundError:
 			print('Video file non-existent')
 		archive()
+		captures = 0
 		if recreate:
 			height, width, channels = frame.shape
 			fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Be sure to use lower case
 			video_out = cv2.VideoWriter('storage/video.mp4', fourcc, 15.0, (width, height))
 			start = datetime.now()
 
-	return video_out, start
+	return video_out, start, captures
 
 
 def camera_loop():
@@ -99,7 +100,7 @@ def camera_loop():
 
 			captures += store(isMoving, frame, video_out)
 
-			video_out, start = save_video(video_out, frame, start, captures)
+			video_out, start, captures = save_video(video_out, frame, start, captures)
 
 		process += 1
 
@@ -113,7 +114,7 @@ def camera_loop():
 		if process.is_alive():
 			process.join()
 	video_capture.release()
-	save_video(video_out, frame, start, force=True, recreate=False)
+	save_video(video_out, frame, start, captures, force=True, recreate=False)
 	cv2.destroyAllWindows()
 
 if __name__ == "__main__":
