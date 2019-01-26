@@ -103,8 +103,7 @@ def camera_loop():
 
 		process += 1
 
-		# cv2.imshow('Video', frame)
-		if stopping or cv2.waitKey(1) & 0xFF == ord('q'):
+		if stopping:
 			break
 
 	while not frameQueue.empty():
