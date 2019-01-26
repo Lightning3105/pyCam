@@ -25,7 +25,7 @@ def store(isMoving, frame, output, force=False):
 	return 0
 
 def archive():
-	DRIVE = '/dev/sdb'
+	DRIVE = '/dev/sda'
 	if os.path.exists(DRIVE):
 		if 9 <= datetime.now().hour <= 22:
 			for file in [f for f in os.listdir('storage') if f != 'video.mp4']:
