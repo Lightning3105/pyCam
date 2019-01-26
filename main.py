@@ -115,7 +115,6 @@ def camera_loop():
 			process.join()
 	video_capture.release()
 	save_video(video_out, frame, start, captures, force=True, recreate=False)
-	cv2.destroyAllWindows()
 
 if __name__ == "__main__":
 	camera_loop()
