@@ -1,6 +1,6 @@
 import cv2
 from time import sleep
-from multiprocessing import Process
+from multiprocessing import Queue, Value
 
 
 def diffImg(t0, t1, t2):
@@ -9,17 +9,14 @@ def diffImg(t0, t1, t2):
 	return cv2.bitwise_and(d1, d2)
 
 
-def motion(frameQueue):
-	lastFrame = frameQueue.get()
-	lastFrame = cv2.cvtColor(lastFrame, cv2.COLOR_RGB2GRAY)
-	lastFrame = cv2.GaussianBlur(lastFrame, (21, 21), 0)
+def motion(frame, last_frame):
+	last_frame = cv2.cvtColor(last_frame, cv2.COLOR_RGB2GRAY)
+	last_frame = cv2.GaussianBlur(last_frame, (21, 21), 0)
 
-	thisFrame = frameQueue.get()
-	frameQueue.put(thisFrame.copy())
-	thisFrame = cv2.cvtColor(thisFrame, cv2.COLOR_RGB2GRAY)
-	thisFrame = cv2.GaussianBlur(thisFrame, (21, 21), 0)
+	frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+	frame = cv2.GaussianBlur(frame, (21, 21), 0)
 
-	frameDelta = cv2.absdiff(lastFrame, thisFrame)
+	frameDelta = cv2.absdiff(last_frame, frame)
 	thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
 
 	movement = 0
@@ -39,3 +36,12 @@ def motion(frameQueue):
 	#cv2.imshow("Frame Delta", frameDelta)
 
 	return int(movement)
+
+
+def motion_loop(frame_queue: Queue, is_moving, stop_all: Value):
+	last_frame = None
+	while True:
+		frame = frame_queue.get()
+		if last_frame is not None:
+			is_moving.value = motion(frame, last_frame)
+		last_frame = frame
