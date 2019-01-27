@@ -37,7 +37,7 @@ def store(is_moving, is_present, frame, force=False):
 
 def archive():
 	def _archive():
-		DRIVE = 'external'  # '/dev/sda'
+		DRIVE = '/dev/sda'
 		if os.path.exists(DRIVE):
 			if 9 <= datetime.now().hour <= 22:
 				for dirpath, dirnames, filenames in os.walk('storage', topdown=False):
