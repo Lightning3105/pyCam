@@ -38,12 +38,13 @@ def store(is_moving, is_present, frame, force=False):
 def archive():
 	def _archive():
 		DRIVE = '/dev/sda'
+		MOUNT = '/mnt/storage'
 		if os.path.exists(DRIVE):
 			if 9 <= datetime.now().hour <= 22:
 				for dirpath, dirnames, filenames in os.walk('storage', topdown=False):
 					for file in filenames:
-						os.makedirs(DRIVE + '/camera/' + dirpath.replace('storage', ''), exist_ok=True)
-						os.rename(dirpath + '/' + file, '/mnt/storage/camera' + dirpath.replace('storage', '') + '/' + file)
+						os.makedirs(MOUNT + '/camera/' + dirpath.replace('storage', ''), exist_ok=True)
+						os.rename(dirpath + '/' + file, MOUNT + '/camera' + dirpath.replace('storage', '') + '/' + file)
 					if not os.listdir(dirpath) and dirpath != 'storage':
 						os.rmdir(dirpath)
 
