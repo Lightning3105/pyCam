@@ -43,7 +43,7 @@ def archive():
 				for dirpath, dirnames, filenames in os.walk('storage', topdown=False):
 					for file in filenames:
 						os.makedirs(DRIVE + '/camera/' + dirpath.replace('storage', ''), exist_ok=True)
-						os.rename(dirpath + '/' + file, DRIVE + '/camera' + dirpath.replace('storage', '') + '/' + file)
+						os.rename(dirpath + '/' + file, 'mnt/storage/camera' + dirpath.replace('storage', '') + '/' + file)
 					if not os.listdir(dirpath) and dirpath != 'storage':
 						os.rmdir(dirpath)
 
