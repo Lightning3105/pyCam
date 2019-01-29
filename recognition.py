@@ -2,6 +2,8 @@ import face_recognition
 import cv2
 import os
 from multiprocessing import Queue, Value
+from time import time
+
 
 known_face_encodings = []
 # Load a sample picture and learn how to recognize it.
@@ -10,14 +12,8 @@ for file in os.listdir('dataset'):
 	encoding = face_recognition.face_encodings(image)[0]
 	known_face_encodings.append(encoding)
 
-# Initialize some variables
-face_locations = []
-face_encodings = []
-
 
 def present(frame):
-	global face_locations, face_encodings
-
 	# Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
 	rgb_frame = frame[:, :, ::-1]
 

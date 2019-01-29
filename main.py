@@ -2,11 +2,13 @@ import cv2
 from recognition import recognition_loop as _recognition_loop
 from multiprocessing import Process, Value, Queue
 from motion_detection import motion_loop as _motion_loop
-from datetime import datetime, timedelta
+from datetime import datetime
 import atexit
 import signal
 import os
 import shutil
+from time import sleep, time
+from threading import Thread
 
 
 def recognition_loop(stop_all):
@@ -58,8 +60,43 @@ def frame_push(frame, rec_frame_queue: Queue, mot_frame_queue: Queue):
 	mot_frame_queue.put(frame)
 
 
+class WebcamVideoStream:
+	def __init__(self, src):
+		# initialize the video camera stream and read the first frame
+		# from the stream
+		self.stream = cv2.VideoCapture(src)
+		(self.grabbed, self.frame) = self.stream.read()
+
+		# initialize the variable used to indicate if the thread should
+		# be stopped
+		self.stopped = False
+
+	def start(self):
+		# start the thread to read frames from the video stream
+		Thread(target=self.update, args=()).start()
+		return self
+
+	def update(self):
+		# keep looping infinitely until the thread is stopped
+		while True:
+			# if the thread indicator variable is set, stop the thread
+			if self.stopped:
+				return
+
+			# otherwise, read the next frame from the stream
+			(self.grabbed, self.frame) = self.stream.read()
+
+	def read(self):
+		# return the frame most recently read
+		return self.frame
+
+	def stop(self):
+		# indicate that the thread should be stopped
+		self.stopped = True
+
+
 def camera_loop():
-	video_capture = cv2.VideoCapture("http://192.168.1.10/stream/video.mjpeg")
+	video_capture = WebcamVideoStream("http://192.168.1.10/stream/video.mjpeg").start()
 	process = 0
 
 	stop_all = Value('i', 0)
@@ -67,7 +104,7 @@ def camera_loop():
 	rec_frame_queue, is_present, rec_p = recognition_loop(stop_all)
 	mot_frame_queue, is_moving, mot_p = motion_loop(stop_all)
 
-	height, width, _ = video_capture.read()[1].shape
+	height, width, _ = video_capture.read().shape
 	# video_out, start = start_writing(width, height)
 
 	stopping = []
@@ -84,21 +121,19 @@ def camera_loop():
 	archiver = archive()
 
 	while True:
-		ret, frame = video_capture.read()
+		t = time()
+		frame = video_capture.read()
+		SCALE = 0.5
+		small_frame = cv2.resize(frame, (0, 0), fx=SCALE, fy=SCALE)
+		frame_push(small_frame, rec_frame_queue, mot_frame_queue)
 
-		# Resize frame of video to 1/4 size for faster face recognition processing
-		small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+		print("Am I here?", is_present.value)
+		print("Am I moving?", is_moving.value)
 
-		if process % 30 == 0:
-			frame_push(small_frame, rec_frame_queue, mot_frame_queue)
+		if current_frame is not None:
+			store(is_moving, is_present, current_frame)
 
-			print("Am I here?", is_present.value)
-			print("Am I moving?", is_moving.value)
-
-			if current_frame is not None:
-				store(is_moving, is_present, current_frame)
-
-			current_frame = frame
+		current_frame = frame
 
 		if process >= 30 * 60 * 60:
 			process = 1
@@ -109,6 +144,8 @@ def camera_loop():
 		if stopping:
 			break
 
+		sleep(1 - (time() - t))
+
 	# while not frameQueue.empty():
 	#	frameQueue.get()
 	archiver.join()
@@ -118,7 +155,7 @@ def camera_loop():
 	rec_p.join()
 	mot_p.terminate()
 	mot_p.join()"""
-	video_capture.release()
+	video_capture.stop()
 
 
 if __name__ == "__main__":
