@@ -1,6 +1,6 @@
 import cv2
 from time import sleep
-from multiprocessing import Queue, Value
+from multiprocessing import Queue, Value, current_process
 
 
 def diffImg(t0, t1, t2):
@@ -39,6 +39,7 @@ def motion(frame, last_frame):
 
 
 def motion_loop(frame_queue: Queue, is_moving, stop_all: Value):
+	print("Started motion loop", current_process().pid)
 	last_frame = None
 	while True:
 		frame = frame_queue.get()

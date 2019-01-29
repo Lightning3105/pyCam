@@ -1,6 +1,6 @@
 import cv2
 from recognition import recognition_loop as _recognition_loop
-from multiprocessing import Process, Value, Queue
+from multiprocessing import Process, Value, Queue, current_process
 from motion_detection import motion_loop as _motion_loop
 from datetime import datetime
 import atexit
@@ -96,6 +96,7 @@ class WebcamVideoStream:
 
 
 def camera_loop():
+	print("Started camera loop", current_process().pid)
 	video_capture = WebcamVideoStream("http://192.168.1.10/stream/video.mjpeg").start()
 	process = 0
 

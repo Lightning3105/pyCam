@@ -1,7 +1,7 @@
 import face_recognition
 import cv2
 import os
-from multiprocessing import Queue, Value
+from multiprocessing import Queue, Value, current_process
 from time import time
 
 
@@ -32,6 +32,7 @@ def present(frame):
 
 
 def recognition_loop(frame_queue: Queue, is_present: Value, stop_all: Value):
+	print("Started recognition loop", current_process().pid)
 	while True:
 		frame = frame_queue.get()
 		is_present.value = present(frame)
