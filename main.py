@@ -46,7 +46,8 @@ def archive():
 				for dirpath, dirnames, filenames in os.walk('storage', topdown=False):
 					for file in filenames:
 						os.makedirs(MOUNT + '/camera/' + dirpath.replace('storage', ''), exist_ok=True)
-						shutil.move(dirpath + '/' + file, MOUNT + '/camera' + dirpath.replace('storage', '') + '/' + file)
+						shutil.move(dirpath + '/' + file,
+						            MOUNT + '/camera' + dirpath.replace('storage', '') + '/' + file)
 					if not os.listdir(dirpath) and dirpath != 'storage':
 						os.rmdir(dirpath)
 
@@ -64,16 +65,21 @@ class WebcamVideoStream:
 	def __init__(self, src):
 		# initialize the video camera stream and read the first frame
 		# from the stream
-		self.stream = cv2.VideoCapture(src)
-		(self.grabbed, self.frame) = self.stream.read()
-
-		# initialize the variable used to indicate if the thread should
-		# be stopped
+		self.src = src
 		self.stopped = False
+		self.stream = None # type: cv2.VideoCapture
+		self.grabbed = None
+		self.frame = None
+		self.connect()
+
+	def connect(self):
+		self.stream = cv2.VideoCapture(self.src)
+		(self.grabbed, self.frame) = self.stream.read()
 
 	def start(self):
 		# start the thread to read frames from the video stream
-		Thread(target=self.update, args=()).start()
+		self.thread = Thread(target=self.update, args=())
+		self.thread.start()
 		return self
 
 	def update(self):
@@ -81,10 +87,19 @@ class WebcamVideoStream:
 		while True:
 			# if the thread indicator variable is set, stop the thread
 			if self.stopped:
+				self.stream.release()
 				return
+
+			if not self.grabbed:
+				print("Reconnecting...")
+				self.connect()
+				if not self.grabbed:
+					sleep(10)
+				continue
 
 			# otherwise, read the next frame from the stream
 			(self.grabbed, self.frame) = self.stream.read()
+
 
 	def read(self):
 		# return the frame most recently read
@@ -124,12 +139,19 @@ def camera_loop():
 	while True:
 		t = time()
 		frame = video_capture.read()
+		if frame is None:
+			sleep(10)
+			continue
 		SCALE = 0.5
 		small_frame = cv2.resize(frame, (0, 0), fx=SCALE, fy=SCALE)
 		frame_push(small_frame, rec_frame_queue, mot_frame_queue)
 
-		print("Am I here?", is_present.value)
-		print("Am I moving?", is_moving.value)
+		cpu_temp = os.popen("vcgencmd measure_temp &> /dev/null").readline().strip().replace("temp=", "")
+
+		print(">> motion: {}, present: {}, connected: {}, temp: {}".format(is_moving.value,
+																			is_present.value,
+																			video_capture.grabbed,
+		                                                                    cpu_temp))
 
 		if current_frame is not None:
 			store(is_moving, is_present, current_frame)
@@ -147,8 +169,11 @@ def camera_loop():
 
 		sleep(1 - (time() - t))
 
-	# while not frameQueue.empty():
-	#	frameQueue.get()
+	while not rec_frame_queue.empty():
+		rec_frame_queue.get()
+
+	while not mot_frame_queue.empty():
+		mot_frame_queue.get()
 	archiver.join()
 
 	"""
