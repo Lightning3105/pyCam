@@ -158,7 +158,7 @@ def camera_loop():
 
 		current_frame = frame
 
-		if process >= 30 * 60 * 60:
+		if process >= 60 * 60:
 			process = 1
 			archiver = archive()
 
