@@ -112,7 +112,7 @@ class WebcamVideoStream:
 
 def camera_loop():
 	print("Started camera loop", current_process().pid)
-	video_capture = WebcamVideoStream("http://192.168.1.10/stream/video.mjpeg").start()
+	video_capture = WebcamVideoStream("http://192.168.1.10/?action=stream").start()
 	process = 0
 
 	stop_all = Value('i', 0)
